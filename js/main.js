@@ -285,28 +285,52 @@
     });
   });
 
-  /* ---------- menu horizontal pin ---------- */
+  /* ---------- menu: pin horizontal hanya untuk desktop ---------- */
   var track = document.querySelector('.menu-track');
-  if (track) {
+  var mrail = document.querySelector('.menu-rail');
+  var mbar = document.querySelector('.menu-progress b');
+  var railMq = window.matchMedia('(max-width: 900px)');
+
+  /* di mobile rel digeser native; progres dihitung dari scrollLeft */
+  function setBarScale(p) {
+    if (mbar) mbar.style.transform = 'scaleX(' + Math.min(1, Math.max(0, p)) + ')';
+  }
+  function railProgress() {
+    if (!railMq.matches) return;
+    var max = mrail.scrollWidth - mrail.clientWidth;
+    setBarScale(max > 0 ? mrail.scrollLeft / max : 0);
+  }
+  if (mrail && mbar) {
+    mrail.addEventListener('scroll', railProgress, { passive: true });
+    window.addEventListener('resize', railProgress);
+    railMq.addEventListener('change', railProgress);
+    railProgress();
+  }
+
+  if (track && !isStatic) {
     var getTravel = function () {
       return Math.max(0, track.scrollWidth - window.innerWidth + 48);
     };
-    gsap.to(track, {
-      x: function () { return -getTravel(); },
-      ease: 'none',
-      scrollTrigger: {
-        trigger: '.menu',
-        start: 'top top',
-        end: function () { return '+=' + getTravel(); },
-        pin: '.menu-pin',
-        scrub: 0.55,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
-        onUpdate: function (self) {
-          var b = document.querySelector('.menu-progress b');
-          if (b) b.style.transform = 'scaleX(' + self.progress + ')';
+    var menuMm = gsap.matchMedia();
+    menuMm.add('(min-width: 901px)', function () {
+      var tween = gsap.to(track, {
+        x: function () { return -getTravel(); },
+        ease: 'none',
+        scrollTrigger: {
+          trigger: '.menu',
+          start: 'top top',
+          end: function () { return '+=' + getTravel(); },
+          pin: '.menu-pin',
+          scrub: 0.55,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+          onUpdate: function (self) { setBarScale(self.progress); }
         }
-      }
+      });
+      return function () {
+        if (tween.scrollTrigger) tween.scrollTrigger.kill();
+        tween.kill();
+      };
     });
   }
 
