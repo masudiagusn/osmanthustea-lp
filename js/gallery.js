@@ -1,17 +1,14 @@
 /* =========================================================
    OSMA — data galeri event
    ---------------------------------------------------------
-   Bentuk tiap baris sengaja dibuat sama dengan respons
-   `api/galeri.php` di OSMA POS, supaya nanti tinggal diganti:
+   Sumber: api/galeri.php di OSMA POS (hanya foto berstatus
+   APPROVED). Bila API kosong / belum siap, dipakai data statis
+   di bawah supaya halaman tidak pernah kosong.
 
-     fetch('https://pos.osmanthustea.id/api/galeri.php')
-       .then(r => r.json())
-       .then(res => renderGallery(res.data));
-
-   Saat ini masih data statis (foto dokumentasi lama).
-   venue & kota di bawah adalah contoh — akan terisi otomatis
-   dari foto yang dikirim franchisee lewat menu "Kirim Foto".
+   Bentuk objek: { venue, city, caption, image, wide? }
    ========================================================= */
+window.OSMA_GALLERY_API = 'https://pos.osmanthustea.id/api/galeri.php';
+
 window.OSMA_GALLERY = [
   {
     venue: 'Pasar-Pasaran',
@@ -46,29 +43,49 @@ window.OSMA_GALLERY = [
   }
 ];
 
+/* ------------------------------------------------------------------ util */
+window.osmaEsc = function (v) {
+  return String(v == null ? '' : v)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+};
+
+window.osmaPinIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+
+/**
+ * Ambil foto dari OSMA POS. Resolve ke array (bisa kosong) dan tidak
+ * pernah reject — pemanggil cukup pakai fallback bila hasilnya kosong.
+ */
+window.loadGalleryData = function (limit) {
+  var url = window.OSMA_GALLERY_API + '?limit=' + encodeURIComponent(limit || 48);
+  if (!window.fetch || !window.AbortController) {
+    return Promise.resolve([]);
+  }
+  var ctrl = new AbortController();
+  var timer = setTimeout(function () { ctrl.abort(); }, 4500);
+
+  return fetch(url, { signal: ctrl.signal, mode: 'cors', credentials: 'omit' })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (res) { return (res && Array.isArray(res.data)) ? res.data : []; })
+    .catch(function () { return []; })
+    .then(function (data) { clearTimeout(timer); return data; });
+};
+
+/* ------------------------------------------------- beranda: galeri teaser */
 (function () {
   'use strict';
 
-  var PIN = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
-
-  function esc(v) {
-    return String(v == null ? '' : v)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-  }
-
   function renderGallery(items) {
     var grid = document.getElementById('gal-grid');
-    if (!grid) return;
+    if (!grid || !items.length) return;
 
     // Dari API belum tentu ada penanda "wide": pakai kartu pertama sebagai kartu lebar.
-    if (items.length && !items.some(function (i) { return i.wide; })) {
+    if (!items.some(function (i) { return i.wide; })) {
       items = items.map(function (it, idx) {
         return idx === 0 ? Object.assign({}, it, { wide: true }) : it;
       });
     }
 
-    // Saat dirender untuk tangkapan layar (?flat), muat semua gambar langsung.
     var eager = /(\?|&)flat/.test(location.search);
 
     grid.innerHTML = items.map(function (ev) {
@@ -76,48 +93,28 @@ window.OSMA_GALLERY = [
       var alt = loc ? loc + ' — ' + ev.caption : ev.caption;
       return '' +
         '<figure class="gal-item' + (ev.wide ? ' gal-wide' : '') + '">' +
-          '<img src="' + esc(ev.image) + '" alt="' + esc(alt) + '"' + (eager ? '' : ' loading="lazy"') + '>' +
+          '<img src="' + osmaEsc(ev.image) + '" alt="' + osmaEsc(alt) + '"' + (eager ? '' : ' loading="lazy"') + '>' +
           '<figcaption>' +
-            '<span class="gal-loc">' + PIN + esc(loc) + '</span>' +
-            '<span class="gal-name">' + esc(ev.caption) + '</span>' +
+            '<span class="gal-loc">' + osmaPinIcon + '<span class="gal-loc__txt">' + osmaEsc(loc) + '</span></span>' +
+            '<span class="gal-name">' + osmaEsc(ev.caption) + '</span>' +
           '</figcaption>' +
         '</figure>';
     }).join('');
 
-    // Beri tahu animasi skrip utama bahwa kartu baru sudah siap.
     document.dispatchEvent(new CustomEvent('osma:gallery', { detail: { count: items.length } }));
   }
 
   window.renderGallery = renderGallery;
+
+  if (!document.getElementById('gal-grid')) {
+    return; // halaman ini tidak punya teaser galeri
+  }
+
   renderGallery(window.OSMA_GALLERY || []);
 
-  /* ------------------------------------------------------------------
-     Ambil foto terbaru dari OSMA POS. Kalau API kosong / belum siap,
-     galeri tetap memakai data statis di atas — halaman tidak kosong.
-     ------------------------------------------------------------------ */
-  var API = 'https://pos.osmanthustea.id/api/galeri.php';
-
-  function fetchLiveGallery() {
-    if (!API || !window.fetch || !window.AbortController) return;
-
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, 4000);
-
-    fetch(API + '?limit=12', { signal: ctrl.signal, mode: 'cors', credentials: 'omit' })
-      .then(function (r) { return r.ok ? r.json() : null; })
-      .then(function (res) {
-        var data = res && res.data;
-        if (Array.isArray(data) && data.length > 0) {
-          renderGallery(data);
-        }
-      })
-      .catch(function () { /* offline / API belum siap: pakai data statis */ })
-      .then(function () { clearTimeout(timer); });
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', fetchLiveGallery);
-  } else {
-    fetchLiveGallery();
-  }
+  window.loadGalleryData(12).then(function (data) {
+    if (data && data.length) {
+      renderGallery(data);
+    }
+  });
 })();
