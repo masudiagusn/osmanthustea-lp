@@ -20,7 +20,7 @@ GET https://pos.osmanthustea.id/api/galeri.php?limit=12
 - Hanya foto berstatus `APPROVED`.
 - `Access-Control-Allow-Origin: *`
 - `Cache-Control: public, max-age=300`
-- `limit`: 1â€“48, default 12.
+- `limit`: 1–48, default 12.
 
 Respons:
 
@@ -58,7 +58,7 @@ if (json.ok) {
 
 - Jangan menampilkan foto yang tidak ada di respons.
 - Tangani `count: 0` dengan empty state.
-- Jika fetch gagal/timeout, tampilkan galeri cache/empty state â€” **jangan**
+- Jika fetch gagal/timeout, tampilkan galeri cache/empty state — **jangan**
   menampilkan error mentah ke pengunjung.
 - Gambar berasal dari domain POS. Jika POS down, gambar bisa gagal dimuat;
   sediakan fallback/placeholder.

@@ -52,22 +52,89 @@ window.osmaEsc = function (v) {
 
 window.osmaPinIcon = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s6.5-6 6.5-11a6.5 6.5 0 1 0-13 0C5.5 15 12 21 12 21Z"/><circle cx="12" cy="10" r="2.5"/></svg>';
 
+/* --------------------------------------------------------- cache 5 menit */
+var GALLERY_TTL = 5 * 60 * 1000;
+
+function galleryCacheKey(limit) {
+  return 'osma:gallery:v1:' + limit;
+}
+
+function readGalleryCache(limit) {
+  try {
+    var raw = window.localStorage.getItem(galleryCacheKey(limit));
+    if (!raw) return null;
+    var saved = JSON.parse(raw);
+    if (!saved || !Array.isArray(saved.data)) return null;
+    return { data: saved.data, ts: Number(saved.ts) || 0 };
+  } catch (err) {
+    return null;
+  }
+}
+
+function writeGalleryCache(limit, data) {
+  try {
+    window.localStorage.setItem(galleryCacheKey(limit), JSON.stringify({
+      ts: Date.now(),
+      data: data
+    }));
+  } catch (err) {
+    /* localStorage penuh/diblokir: abaikan, galeri tetap tampil */
+  }
+}
+
+/* ------------------------------------------------- fallback gambar rusak */
+window.osmaBrokenImage = function (img) {
+  if (!img || img.getAttribute('data-broken') === '1') return;
+  img.setAttribute('data-broken', '1');
+  img.style.display = 'none';
+  var fig = img.closest ? img.closest('figure') : null;
+  if (fig) fig.classList.add('is-broken');
+};
+
+/** Pantau gambar di dalam container; ganti dengan placeholder bila gagal. */
+window.osmaWatchImages = function (container) {
+  if (!container) return;
+  container.addEventListener('error', function (e) {
+    if (e.target && e.target.tagName === 'IMG') window.osmaBrokenImage(e.target);
+  }, true);
+};
+
 /**
  * Ambil foto dari OSMA POS. Resolve ke array (bisa kosong) dan tidak
  * pernah reject — pemanggil cukup pakai fallback bila hasilnya kosong.
+ * Respons disimpan 5 menit di localStorage; bila jaringan gagal, cache
+ * terakhir dipakai supaya galeri tidak kosong.
  */
 window.loadGalleryData = function (limit) {
-  var url = window.OSMA_GALLERY_API + '?limit=' + encodeURIComponent(limit || 48);
-  if (!window.fetch || !window.AbortController) {
-    return Promise.resolve([]);
+  var lim = limit || 48;
+  var cached = readGalleryCache(lim);
+
+  if (cached && Date.now() - cached.ts < GALLERY_TTL) {
+    return Promise.resolve(cached.data);
   }
+
+  var url = window.OSMA_GALLERY_API + '?limit=' + encodeURIComponent(lim);
+  if (!window.fetch || !window.AbortController) {
+    return Promise.resolve(cached ? cached.data : []);
+  }
+
   var ctrl = new AbortController();
   var timer = setTimeout(function () { ctrl.abort(); }, 4500);
 
   return fetch(url, { signal: ctrl.signal, mode: 'cors', credentials: 'omit' })
     .then(function (r) { return r.ok ? r.json() : null; })
-    .then(function (res) { return (res && Array.isArray(res.data)) ? res.data : []; })
-    .catch(function () { return []; })
+    .then(function (res) {
+      // Respons sukses tapi kosong tetap disimpan: foto yang sudah tidak
+      // tayang tidak boleh muncul lagi dari cache lama.
+      if (!res || !Array.isArray(res.data)) {
+        return cached ? cached.data : [];
+      }
+      writeGalleryCache(lim, res.data);
+      return res.data;
+    })
+    .catch(function () {
+      return cached ? cached.data : [];
+    })
     .then(function (data) { clearTimeout(timer); return data; });
 };
 
@@ -106,10 +173,12 @@ window.loadGalleryData = function (limit) {
 
   window.renderGallery = renderGallery;
 
-  if (!document.getElementById('gal-grid')) {
+  var grid = document.getElementById('gal-grid');
+  if (!grid) {
     return; // halaman ini tidak punya teaser galeri
   }
 
+  window.osmaWatchImages(grid);
   renderGallery(window.OSMA_GALLERY || []);
 
   window.loadGalleryData(12).then(function (data) {

@@ -14,6 +14,10 @@
   var emptyEl = document.getElementById('fg-empty');
   if (!grid) return;
 
+  if (window.osmaWatchImages) {
+    window.osmaWatchImages(grid);
+  }
+
   var items = [];
   var page = 1;
   var pageItems = [];
@@ -113,6 +117,10 @@
   var lbCount  = document.getElementById('lb-counter');
   var lastFocus = null;
   var current = 0;
+
+  if (window.osmaWatchImages) {
+    window.osmaWatchImages(lb);
+  }
 
   function openLB(indexInPage) {
     current = indexInPage;
