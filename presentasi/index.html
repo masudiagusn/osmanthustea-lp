@@ -375,6 +375,91 @@ h2.title{
 @media (max-width:940px){.flow__item:nth-child(4n)::after{display:block}.flow__item:nth-child(2n)::after{display:none}}
 @media (max-width:480px){.flow__item::after{display:none}}
 
+/* ---------- penutup / manfaat ---------- */
+.closing-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);
+  margin-top:clamp(36px,4.8vw,58px);
+  border-top:1px solid var(--line);
+}
+.closing-item{
+  display:flex;flex-direction:column;
+  padding:clamp(24px,3vw,34px) clamp(20px,2.6vw,32px) clamp(26px,3.4vw,38px) 0;
+  border-right:1px solid var(--line-soft);
+}
+.closing-item:last-child{border-right:0;padding-right:0}
+.closing-no{
+  display:block;font-family:var(--serif);font-size:12.5px;letter-spacing:.18em;
+  color:var(--orange);margin-bottom:clamp(20px,2.4vw,28px);
+}
+.closing-item h3{
+  font-family:var(--serif);font-size:clamp(23px,2.2vw,30px);font-weight:500;
+  line-height:1.14;letter-spacing:-.012em;margin-bottom:13px;max-width:17ch;
+  text-wrap:balance;
+}
+.closing-item > p:not(.closing-impact){
+  font-size:14.5px;line-height:1.75;color:var(--muted);font-weight:300;max-width:36ch;
+  text-wrap:pretty;
+}
+.closing-impact{
+  display:flex;gap:10px;align-items:flex-start;margin-top:auto;padding-top:16px;
+  border-top:1px solid var(--line-soft);
+  font-size:11.5px;line-height:1.6;color:var(--muted-2);
+}
+.closing-impact b{
+  flex:none;font-size:9px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--orange);padding-top:2px;
+}
+@media (max-width:820px){
+  .closing-grid{grid-template-columns:1fr}
+  .closing-item{
+    border-right:0;border-bottom:1px solid var(--line-soft);
+    padding:clamp(22px,4vw,30px) 0;
+  }
+  .closing-item:last-child{border-bottom:0;padding-bottom:0}
+  .closing-item h3{max-width:24ch}
+  .closing-item > p:not(.closing-impact){max-width:52ch}
+}
+
+.closing-summary{
+  position:relative;overflow:hidden;margin-top:clamp(32px,4.4vw,54px);
+  padding:clamp(28px,4vw,46px);border-radius:var(--r);
+  background:var(--navy);color:var(--cream);
+}
+.closing-summary::before{
+  content:'桂';position:absolute;right:clamp(10px,2.5vw,32px);bottom:-52px;
+  font-family:var(--serif);font-size:clamp(120px,15vw,190px);line-height:1;
+  color:rgba(251,246,236,.05);pointer-events:none;
+}
+.closing-summary > *{position:relative;z-index:1}
+.closing-summary__label{
+  font-size:10px;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(251,246,236,.42);margin-bottom:16px;
+}
+.closing-eq{
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;
+  font-family:var(--serif);font-size:clamp(22px,2.7vw,32px);line-height:1.1;
+  color:#F7EFE0;
+}
+.closing-eq b{font-weight:500}
+.closing-eq > span{display:inline-flex;align-items:center;gap:14px}
+.closing-eq i{font-style:normal;color:var(--orange-soft);font-size:.72em}
+.closing-eq-result{
+  margin-top:16px;max-width:60ch;
+  font-size:clamp(15px,1.3vw,17.5px);line-height:1.7;font-weight:300;
+  color:rgba(251,246,236,.72);text-wrap:pretty;
+}
+.closing-eq-result b{color:#F7EFE0;font-weight:500}
+.closing-note{
+  margin-top:18px;max-width:56ch;
+  font-size:12px;line-height:1.7;color:rgba(251,246,236,.4);
+}
+@media (max-width:560px){
+  .closing-summary{padding:24px 20px 26px}
+  .closing-eq{gap:6px 10px}
+  .closing-eq > span{gap:10px}
+  .closing-eq b{white-space:nowrap}
+}
+
 /* gallery strip */
 .strip{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}
 .strip img{border-radius:10px;border:1px solid var(--line-soft);height:100%;object-fit:cover}
@@ -430,6 +515,7 @@ figcaption{margin-top:12px;font-size:11.5px;letter-spacing:.04em;color:var(--mut
     <a href="#crm">CRM</a>
     <a href="#pos">POS</a>
     <a href="#rekap">Rekap</a>
+    <a href="#manfaat">Manfaat</a>
   </nav>
   <span class="topmeta">Sistem Terpadu · 2026</span>
 </header>
@@ -1300,6 +1386,69 @@ figcaption{margin-top:12px;font-size:11.5px;letter-spacing:.04em;color:var(--mut
   </div>
 </section>
 
+<!-- ============ PENUTUP / MANFAAT ============ -->
+<section class="section" id="manfaat">
+  <div class="wrap">
+    <div class="step-head">
+      <div data-reveal>
+        <p class="eyebrow"><b>10</b> Penutup</p>
+        <h2 class="title">Bukan tiga biaya. Tiga <em>pengungkit</em>.</h2>
+      </div>
+      <div data-reveal>
+        <p class="lead">
+          OsmaLP, OsmaCRM, dan OsmaPOS bukan proyek IT yang berjalan sendiri-sendiri.
+          Ketiganya membentuk satu mesin bisnis: brand ditemukan, mitra dikelola,
+          gerai menghasilkan — lalu datanya kembali ke pusat untuk keputusan berikutnya.
+        </p>
+      </div>
+    </div>
+
+    <div class="closing-grid">
+      <article class="closing-item" data-reveal>
+        <span class="closing-no">01 · Operasional</span>
+        <h3>Mengelola bisnis lebih mudah</h3>
+        <p>Satu alur dari pendaftaran mitra, kontrak, pasokan, tagihan, sampai kasir
+          dan laporan harian. Pusat melihat kondisi jaringan; gerai menjalankan
+          operasional tanpa entri data ganda.</p>
+        <p class="closing-impact"><b>Dampak</b><span>Waktu tim kembali ke pekerjaan
+          yang bernilai, bukan mengejar rekap manual.</span></p>
+      </article>
+
+      <article class="closing-item" data-reveal>
+        <span class="closing-no">02 · Nilai perusahaan</span>
+        <h3>Meningkatkan corporate value</h3>
+        <p>Proses yang terdokumentasi, data yang bisa diaudit, dan operasi yang dapat
+          direplikasi membuat jaringan lebih mudah dinilai — oleh mitra, bank,
+          maupun investor.</p>
+        <p class="closing-impact"><b>Dampak</b><span>Bisnis menjadi aset yang bisa
+          dibesarkan, bukan ketergantungan pada satu orang.</span></p>
+      </article>
+
+      <article class="closing-item" data-reveal>
+        <span class="closing-no">03 · Pertumbuhan</span>
+        <h3>Berpotensi meningkatkan revenue</h3>
+        <p>Pipeline yang rapi mempercepat pembukaan gerai. Order bahan baku dan
+          tagihan berulang menambah pendapatan, sementara data penjualan membantu
+          menu, harga, dan stok yang lebih menguntungkan — ruang bagi pertumbuhan
+          revenue yang signifikan.</p>
+        <p class="closing-impact"><b>Dampak</b><span>Setiap gerai baru memperbesar
+          jaringan dan pendapatan berulang.</span></p>
+      </article>
+    </div>
+
+    <div class="closing-summary" data-reveal>
+      <p class="closing-summary__label">Rumusnya</p>
+      <p class="closing-eq"><b>OsmaLP</b><span><i>+</i><b>OsmaCRM</b></span><span><i>+</i><b>OsmaPOS</b></span></p>
+      <p class="closing-eq-result">= satu perusahaan franchise yang <b>lebih mudah
+        dikelola</b>, <b>lebih bernilai</b>, dan <b>lebih siap bertumbuh</b>.</p>
+      <p class="closing-note">Bukan proyek IT yang berdiri sendiri — infrastruktur
+        pertumbuhan yang menyatukan brand, operasional, dan pendapatan.</p>
+    </div>
+
+    <p class="kicker-line" data-reveal>Satu ekosistem · satu sumber kebenaran · satu arah pertumbuhan</p>
+  </div>
+</section>
+
 </main>
 
 <footer class="footer">
@@ -1326,6 +1475,7 @@ figcaption{margin-top:12px;font-size:11.5px;letter-spacing:.04em;color:var(--mut
         <p><a href="#landing">Landing page</a></p>
         <p><a href="#crm">OsmaCRM</a></p>
         <p><a href="#pos">OsmaPOS</a></p>
+        <p><a href="#manfaat">Manfaat</a></p>
       </div>
     </div>
     <div class="footer-bottom">
