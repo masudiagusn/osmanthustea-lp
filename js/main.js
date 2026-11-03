@@ -275,6 +275,16 @@
     });
   }
 
+  /* ---------- galeri: animasi untuk kartu yang datang dari API ---------- */
+  document.addEventListener('osma:gallery', function () {
+    var items = document.querySelectorAll('.gal-item');
+    if (!items.length) return;
+    gsap.from(items, {
+      opacity: 0, y: 40, duration: 1, stagger: 0.06, ease: 'power3.out',
+      scrollTrigger: { trigger: '.gal-grid', start: 'top 88%', once: true }
+    });
+  });
+
   /* ---------- menu horizontal pin ---------- */
   var track = document.querySelector('.menu-track');
   if (track) {

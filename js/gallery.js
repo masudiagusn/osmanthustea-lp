@@ -61,6 +61,13 @@ window.OSMA_GALLERY = [
     var grid = document.getElementById('gal-grid');
     if (!grid) return;
 
+    // Dari API belum tentu ada penanda "wide": pakai kartu pertama sebagai kartu lebar.
+    if (items.length && !items.some(function (i) { return i.wide; })) {
+      items = items.map(function (it, idx) {
+        return idx === 0 ? Object.assign({}, it, { wide: true }) : it;
+      });
+    }
+
     // Saat dirender untuk tangkapan layar (?flat), muat semua gambar langsung.
     var eager = /(\?|&)flat/.test(location.search);
 
@@ -83,4 +90,34 @@ window.OSMA_GALLERY = [
 
   window.renderGallery = renderGallery;
   renderGallery(window.OSMA_GALLERY || []);
+
+  /* ------------------------------------------------------------------
+     Ambil foto terbaru dari OSMA POS. Kalau API kosong / belum siap,
+     galeri tetap memakai data statis di atas — halaman tidak kosong.
+     ------------------------------------------------------------------ */
+  var API = 'https://pos.osmanthustea.id/api/galeri.php';
+
+  function fetchLiveGallery() {
+    if (!API || !window.fetch || !window.AbortController) return;
+
+    var ctrl = new AbortController();
+    var timer = setTimeout(function () { ctrl.abort(); }, 4000);
+
+    fetch(API + '?limit=12', { signal: ctrl.signal, mode: 'cors', credentials: 'omit' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (res) {
+        var data = res && res.data;
+        if (Array.isArray(data) && data.length > 0) {
+          renderGallery(data);
+        }
+      })
+      .catch(function () { /* offline / API belum siap: pakai data statis */ })
+      .then(function () { clearTimeout(timer); });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fetchLiveGallery);
+  } else {
+    fetchLiveGallery();
+  }
 })();
