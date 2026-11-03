@@ -1,0 +1,12 @@
+# Aset mentah (unduhan Drive) & master PNG — sumbernya di Drive, tidak perlu di repo
+/assets/*.png
+/assets/trim/*.png
+
+# Bahan referensi & skrip kerja (tangkapan layar, crop)
+/ref/
+/tools/
+
+# Berkas sistem
+.DS_Store
+Thumbs.db
+desktop.ini
