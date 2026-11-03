@@ -703,6 +703,14 @@ button{ font:inherit; }
   border-top:1px solid rgba(251,246,236,.09); padding:24px var(--pad) 28px;
   font-size:12px; letter-spacing:.05em; color:rgba(251,246,236,.42);
 }
+.footer-legal{ display:flex; align-items:center; gap:18px; flex-wrap:wrap; }
+.footer-credit{ display:inline-flex; align-items:center; }
+.footer-credit::before{ content:""; width:1px; height:11px; background:rgba(251,246,236,.2); margin-right:14px; }
+.footer-credit a{
+  color:rgba(251,246,236,.62); border-bottom:1px solid transparent; margin-left:.3em;
+  transition:color .35s var(--ease), border-color .35s var(--ease);
+}
+.footer-credit a:hover{ color:var(--orange-soft); border-color:rgba(248,201,139,.45); }
 
 /* ---------- cursor petal trail ---------- */
 .petal-field{
@@ -868,6 +876,8 @@ html.flat .scroll-progress{ display:none; }
   .gal-foot{ flex-direction:column; align-items:flex-start; gap:16px; }
   .footer-top{ grid-template-columns:1fr; }
   .footer-bottom{ flex-direction:column; gap:8px; }
+  .footer-legal{ flex-direction:column; align-items:flex-start; gap:6px; }
+  .footer-credit::before{ display:none; }
   .menu-pin{ padding:88px 0 72px; }
   .menu-flavor{ font-size:18.5px; }
   .mcard{ width:min(80vw,280px); }
