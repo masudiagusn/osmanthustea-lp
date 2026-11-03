@@ -4,121 +4,110 @@
 
 **Tanggal:** 3 November 2026
 **Kontrak API:** v1
-**Status:** kode portal sudah di-commit di POS & CRM; staging POS sudah memuat portal; staging CRM belum (404); produksi belum memakai portal.
+**Status:** **portal aktif di staging dan produksi.** CRM, POS, dan LP sudah terhubung.
 
 ---
 
-## 1. Baca dulu (urut prioritas)
+## 1. Hasil verifikasi (3 Nov 2026)
+
+| Item | Hasil |
+|---|---|
+| CRM staging `/api/pos/portal` | **401** (route hidup, menolak tanpa signature) |
+| CRM produksi `/api/pos/portal` | **401** |
+| CRM staging `/app` | **307** â†’ `https://osma-pos-staging.helipod.app` |
+| CRM produksi `/app` | **307** â†’ `https://pos.osmanthustea.id` |
+| POS staging `pasokan.php` | login â†’ data CRM tampil; order uji **OS-2611-911** berhasil |
+| POS produksi `pasokan.php` | data CRM tampil untuk **CFD Sidoarjo** dan **Play Gency** |
+| CRM produksi `/api/pos/sales` | **200** (health endpoint) |
+| LP produksi | CTA ke `https://crm.osmanthustea.id/daftar?...`; galeri **200** |
+| CRM `/daftar` staging & produksi | **200** |
+
+Commit terakhir:
+- POS: `71f10df` (link tenant via env) + `ae5357a` (portal)
+- CRM: `3472fd2` (portal + idempotensi + WIB)
+- LP: `e535f32` (gallery cache/placeholder)
+
+---
+
+## 2. Baca dulu
 
 ### Semua sesi
 1. `docs/api/README.md` â€” arsitektur, auth HMAC, environment, error, idempotensi.
-2. `docs/api/openapi.yaml` â€” kontrak machine-readable (OpenAPI 3.1).
+2. `docs/api/openapi.yaml` â€” kontrak OpenAPI 3.1.
 
-### Sesi OsmaCRM (repo `E:\02-AI-dev\OsmaCRM\osmanthus-crm`)
-1. `docs/api/README.md` â€” salinan panduan khusus CRM.
-2. `docs/api/openapi.yaml` â€” salinan spec.
-3. `lib/pos-portal.ts` â€” logika portal (GET snapshot + 4 aksi).
-4. `app/api/pos/portal/route.ts` â€” endpoint portal.
-5. `app/api/pos/sales/route.ts` â€” endpoint sales harian.
-6. `lib/pos-url.ts` â€” redirect franchisee ke POS.
-7. `prisma/schema.prisma` â€” field `Order.channel`, `Order.externalRef`,
-   `StockAdjustment.externalRef`.
-8. `README.md` bagian **Environment POS** dan **Sinkronisasi penjualan**.
+### OsmaCRM
+- `docs/api/README.md` + `docs/api/openapi.yaml` (salinan)
+- `lib/pos-portal.ts`, `app/api/pos/portal/route.ts`
+- `app/api/pos/sales/route.ts`
+- `lib/pos-url.ts`
+- `prisma/schema.prisma` (`Order.channel`, `Order.externalRef`,
+  `StockAdjustment.externalRef`)
 
-### Sesi OsmaLP (repo `E:\02-AI-dev\OsmaLP`)
-1. `docs/api/README.md` â€” panduan galeri + pendaftaran.
-2. `index.html` â€” CTA kemitraan.
-3. `js/gallery.js` â€” pemanggilan API galeri.
-4. (referensi kanonik) `OsmaPOS/docs/api/consumers/LP.md`.
+### OsmaLP
+- `docs/api/README.md`
+- `index.html` (CTA kemitraan)
+- `js/gallery.js`
 
 ---
 
-## 2. Status saat ini
+## 3. Catatan penting
 
-| Item | Status |
-|---|---|
-| POS portal (`pasokan.php`, `includes/crm.php`) | committed `ae5357a`, sudah di `staging` |
-| CRM portal (`app/api/pos/portal`, `lib/pos-portal.ts`) | committed `a180741`, sudah di `staging` |
-| CRM Dockerfile migrasi nullable unique | committed `baa5820`, sudah di `staging` |
-| POS staging | sudah memuat portal (`pasokan.php` â†’ 303 login) |
-| CRM staging | **masih 404** untuk `/api/pos/portal`; deployment belum berhasil/pick-up |
-| Produksi POS/CRM | **belum** memakai portal |
-| LP CTA + docs | committed `a0af098`, **belum di-push/deploy** |
+1. **Tenant #1 produksi** berisi dua cabang milik franchisee berbeda:
+   - `CFD-SDA` â†’ PT Osma Delta
+   - `PGGCY` â†’ PT Osma Padel Nusantara
 
-**Blocker:** MCP Helipod tidak tersedia di sesi ini, jadi log deployment CRM staging belum bisa dilihat. Perlu redeploy dari dashboard Helipod.
+   Portal produksi saat ini bisa menampilkan keduanya. Untuk jangka panjang,
+   putuskan apakah tenant #1 dipertahankan sebagai legacy atau data per cabang
+   dipisahkan ke tenant franchisee masing-masing.
 
----
+2. **Sales sync** memakai `crm_ref` tenant. Jika tenant #1 dipakai untuk dua
+   franchisee, penjualan dari cabang yang tidak cocok dengan `crm_ref` bisa
+   ditolak CRM (retry/FAILED). Cek `tools/sync-status.php` sebelum mengaktifkan
+   penjualan di cabang kedua.
 
-## 3. Tugas sesi CRM
+3. **LP** hanya membaca galeri dan mengarahkan pendaftaran ke CRM. Tidak ada
+   form atau secret di LP.
 
-1. **Redeploy staging CRM dari dashboard Helipod**, lalu cek log container:
-   - cari `prisma db push`;
-   - pastikan tidak ada error unique index;
-   - pastikan `npm start` berjalan.
-2. Verifikasi endpoint:
-   - `GET https://osmacrm-staging.helipod.app/api/pos/portal` tanpa signature â†’ **401** (bukan 404).
-   - `GET /app` â†’ redirect ke `https://osma-pos-staging.helipod.app`.
-3. Pastikan environment:
-   ```env
-   POS_API_URL=https://osma-pos-staging.helipod.app
-   POS_APP_URL=https://osma-pos-staging.helipod.app   # opsional; fallback POS_API_URL
-   POS_API_KEY=<sama dengan OSMA_CRM_KEY POS staging>
-   POS_WEBHOOK_SECRET=<sama>
-   POS_PORTAL_SECRET=<opsional>
-   POS_SALES_SECRET=<opsional>
-   ```
-4. Uji dari POS staging (login owner PT Osma Delta):
-   - buka **Pasokan** â†’ data CRM tampil;
-   - buat order bahan baku;
-   - adjust stok dua kali dengan `external_ref` sama â†’ qty tidak berubah dua kali.
-5. Setelah staging lolos, **deploy POS + CRM ke `main` bersamaan** (schema dan endpoint saling bergantung). Backup DB POS & CRM dulu.
-6. Jangan mengubah kontrak tanpa menaikkan versi; jangan hapus `docs/api/`.
-
-**Acceptance CRM staging:**
-- `/api/pos/portal` GET/POST = 200 dengan signature valid.
-- `/api/pos/sales` tetap 200 (sales sync tidak rusak).
-- `/app` redirect ke POS staging.
-- `pasokan.php` menampilkan katalog + order + tagihan tanpa error.
+4. **CRM** adalah sumber kebenaran master/supply/finance; POS sumber kebenaran
+   penjualan. LP tidak menyimpan data operasional.
 
 ---
 
-## 4. Tugas sesi LP
+## 4. Checklist jika deploy ulang
 
-1. Review CTA di `index.html`:
-   - target: `https://crm.osmanthustea.id/daftar?utm_source=landing&utm_medium=cta&utm_campaign=kemitraan`
-   - `target="_blank" rel="noopener"`.
-2. Pastikan galeri tetap memakai:
-   `https://pos.osmanthustea.id/api/galeri.php?limit=...`
-3. Tangani kegagalan galeri dengan empty state/placeholder (jangan error mentah).
-4. Setelah review, push/deploy LP.
-5. Jangan menambahkan form pendaftaran atau API key di LP.
+### CRM
+- [ ] `POS_API_URL` = URL POS environment tersebut.
+- [ ] `POS_APP_URL` opsional; fallback `POS_API_URL`.
+- [ ] `POS_API_KEY` / `POS_WEBHOOK_SECRET` sama dengan `OSMA_CRM_KEY` POS.
+- [ ] `POS_PORTAL_SECRET` / `POS_SALES_SECRET` opsional bila memisahkan kunci.
+- [ ] `prisma db push` berhasil (Dockerfile sudah `--accept-data-loss` untuk
+      kolom nullable baru).
+- [ ] `/api/pos/portal` = 401 tanpa signature; `/app` redirect ke POS.
+- [ ] `/api/pos/sales` = 200.
 
-**Acceptance LP:**
-- Tombol â€œAjukan Kemitraanâ€ / â€œIsi Formulir Kemitraanâ€ membuka form CRM.
-- Galeri tetap tampil; `count: 0` tidak error.
-- Tidak ada console error/CORS.
+### POS
+- [ ] `OSMA_CRM_URL` = URL CRM.
+- [ ] `OSMA_CRM_KEY` = kunci yang sama dengan CRM.
+- [ ] `OSMA_SYNC_ENABLED=1`, `OSMA_SYNC_INTERVAL=60`.
+- [ ] `OSMA_DEMO_MODE=0` di produksi.
+- [ ] `OSMA_LINK_TENANT_ID` + `OSMA_LINK_CRM_REF` hanya untuk linking legacy
+      (idempotent; tidak menimpa `crm_ref` yang sudah ada).
+- [ ] `pasokan.php` menampilkan data; `tools/sync-status.php` FAILED = 0.
+
+### LP
+- [ ] CTA ke `https://crm.osmanthustea.id/daftar?utm_source=landing...`.
+- [ ] Galeri memakai `https://pos.osmanthustea.id/api/galeri.php`.
+- [ ] Fallback/placeholder saat API galeri gagal.
 
 ---
 
-## 5. Aturan kontrak (jangan dilanggar)
+## 5. Aturan kontrak
 
-- CRM = sumber kebenaran master/supply/finance; POS = sumber kebenaran penjualan.
-- LP hanya membaca galeri dan mengarahkan pendaftaran ke CRM.
-- Semua server-to-server memakai HMAC + timestamp; jangan kirim secret di URL.
-- Idempotensi: `external_ref` (order, stock), `(outlet_code, date)` (sales), `crm_ref` (provisioning).
+- HMAC + timestamp untuk semua server-to-server; toleransi 300 detik.
+- Idempotensi: `external_ref` (order/stok), `(outlet_code, date)` (sales),
+  `crm_ref` (provisioning).
+- Jangan akses DB aplikasi lain; jangan menaruh secret di URL.
 - Perubahan breaking harus versi baru; perubahan aditif boleh tanpa versi.
-- Jangan akses DB aplikasi lain secara langsung.
-
----
-
-## 6. File kanonik vs salinan
-
-| File | Lokasi kanonik | Salinan |
-|---|---|---|
-| `docs/api/README.md` | `OsmaPOS/docs/api/README.md` | `OsmaCRM/.../docs/api/README.md` |
-| `docs/api/openapi.yaml` | `OsmaPOS/docs/api/openapi.yaml` | `OsmaCRM/.../docs/api/openapi.yaml` |
-| Panduan CRM | `OsmaPOS/docs/api/consumers/CRM.md` | `OsmaCRM/.../docs/api/README.md` |
-| Panduan LP | `OsmaPOS/docs/api/consumers/LP.md` | `OsmaLP/docs/api/README.md` |
-
-Jika kontrak berubah, perbarui file kanonik lalu salin ulang ke repo konsumen.
+- File kanonik: `OsmaPOS/docs/api/README.md` + `openapi.yaml`; salinan di
+  `OsmaCRM/.../docs/api/` dan `OsmaLP/docs/api/`.
 
